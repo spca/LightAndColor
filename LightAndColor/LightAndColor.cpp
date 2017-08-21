@@ -91,6 +91,19 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	};
+	// positions all containers
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 	GLuint vao, vbo;
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
@@ -129,11 +142,15 @@ int main()
 		shader.use();
 		shader.setInt("material.diffuse",0);
 		shader.setInt("material.specular",1 );
-		shader.setInt("material.emission", 2);
+		//shader.setInt("material.emission", 2);
 		shader.setFloat("material.shininess", 64.0f);
+		shader.setVec3("light.position", lightPos);
 		shader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
 		shader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f); // 将光照调暗了一些以搭配场景
 		shader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+		shader.setFloat("light.constant", 1.0f);
+		shader.setFloat("light.linear", 0.09f);
+		shader.setFloat("light.quadratic", 0.032f);
 		// view/projection transformations
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.getViewMatrix();
@@ -141,13 +158,21 @@ int main()
 		shader.setVec3("thisColor", 1.0f, 0.5f, 0.31f);
 		
 		glm::mat4 model;
-		shader.setVec3("lightpos", lightPos);
 		shader.setMat4("model", model);
 		shader.setMat4("view", view);
 		shader.setMat4("projection", projection);
 		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
+		for (unsigned int i = 0; i < 10; i++)
+		{
+			// calculate the model matrix for each object and pass it to shader before drawing
+			glm::mat4 model;
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.0f * i;
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.setMat4("model", model);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		lightShader.use();
 		// also draw the lamp object
